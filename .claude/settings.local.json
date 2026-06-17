@@ -3,7 +3,11 @@
     "allow": [
       "Bash(file:*)",
       "Bash(cat:*)",
-      "Bash(done)"
+      "Bash(done)",
+      "Bash(curl:*)",
+      "Bash(python:*)",
+      "Bash(TOKEN=\"eyJzdWIiOiAiYWRtaW4iLCAiZXhwIjogMTc4MTQ4MTM5NC4yMDc1OTd9\")",
+      "Bash(python3:*)"
     ],
     "deny": [],
     "ask": []
