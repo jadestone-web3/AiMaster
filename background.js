@@ -8,10 +8,14 @@ chrome.runtime.onInstalled.addListener((details) => {
         console.log('AiMaster installed');
         // Set default configuration
         chrome.storage.local.set({
-            apiBaseUrl: 'https://aimedia.daniu7.cn'
+            apiBaseUrl: 'http://localhost:8000'
         });
     } else if (details.reason === 'update') {
         console.log('AiMaster updated');
+        // Update API address when extension is updated
+        chrome.storage.local.set({
+            apiBaseUrl: 'http://localhost:8000'
+        });
     }
 });
 

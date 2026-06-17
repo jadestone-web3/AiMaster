@@ -1,5 +1,5 @@
 // 后端 API 地址
-let API_BASE_URL = 'https://aimedia.daniu7.cn';
+let API_BASE_URL = 'http://localhost:8000';
 
 // 认证信息
 let authToken = '';
@@ -352,7 +352,7 @@ async function handleCrawl() {
 // 加载任务列表
 async function loadTasks() {
     try {
-        const response = await authFetch(`${API_BASE_URL}/api/articles?size=10`);
+        const response = await authFetch(`${API_BASE_URL}/api/tasks?size=10`);
 
         if (!response.ok) {
             throw new Error('获取任务列表失败');
@@ -377,9 +377,11 @@ function renderTasks(tasks) {
 
     const statusMap = {
         'pending_rewrite': { text: '待改写', class: 'crawling' },
+        'rewriting': { text: '改写中', class: 'crawling' },
         'rewritten': { text: '已改写', class: 'processing' },
         'pending_publish': { text: '待发布', class: 'processing' },
-        'published': { text: '已发布', class: 'completed' }
+        'published': { text: '已发布', class: 'completed' },
+        'failed': { text: '失败', class: 'crawling' }
     };
 
     taskList.innerHTML = tasks.map(task => {
@@ -388,10 +390,10 @@ function renderTasks(tasks) {
 
         return `
             <div class="task-item" data-task-id="${task.id}">
-                <div class="task-title" title="${task.original_title}">${task.original_title}</div>
+                <div class="task-title" title="${task.original_title || task.title}">${task.original_title || task.title}</div>
                 <div class="task-status">
                     <span class="status-badge ${status.class}">${status.text}</span>
-                    <span style="font-size: 10px; color: #999;">${task.platform || ''}</span>
+                    <span style="font-size: 10px; color: #999;">${task.original_platform || task.platform || ''}</span>
                     <span class="task-time">${createdAt}</span>
                 </div>
             </div>
