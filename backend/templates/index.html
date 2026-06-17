@@ -1,0 +1,578 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>首页 - AiMaster</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
+            min-height: 100vh;
+        }
+        .navbar {
+            background: white;
+            padding: 0 24px;
+            height: 60px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+        .navbar h1 {
+            color: #667eea;
+            font-size: 20px;
+        }
+        .navbar .user-info {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .navbar .username {
+            color: #333;
+            font-size: 14px;
+        }
+        .navbar .logout-btn {
+            padding: 8px 16px;
+            background: #f5f5f5;
+            color: #666;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        .navbar .logout-btn:hover {
+            background: #eee;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 24px;
+        }
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+        }
+        .header h2 {
+            color: #333;
+            font-size: 20px;
+        }
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 16px;
+            margin-bottom: 24px;
+        }
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+        }
+        .stat-card .label {
+            color: #666;
+            font-size: 13px;
+            margin-bottom: 8px;
+        }
+        .stat-card .value {
+            color: #333;
+            font-size: 28px;
+            font-weight: 600;
+        }
+        .stat-card.pending .value { color: #f59e0b; }
+        .stat-card.rewritten .value { color: #667eea; }
+        .stat-card.published .value { color: #10b981; }
+        .stat-card.failed .value { color: #ef4444; }
+        .task-list {
+            background: white;
+            border-radius: 10px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.06);
+            overflow: hidden;
+        }
+        .task-list-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .task-list-header h3 {
+            color: #333;
+            font-size: 16px;
+        }
+        .task-item {
+            padding: 16px 20px;
+            border-bottom: 1px solid #f0f0f0;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            transition: background 0.2s;
+        }
+        .task-item:last-child {
+            border-bottom: none;
+        }
+        .task-item:hover {
+            background: #fafafa;
+        }
+        .task-info {
+            flex: 1;
+            min-width: 0;
+        }
+        .task-title {
+            color: #333;
+            font-size: 14px;
+            margin-bottom: 6px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        .task-meta {
+            font-size: 12px;
+            color: #999;
+        }
+        .task-status {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+        }
+        .task-status.pending {
+            background: #fef3c7;
+            color: #d97706;
+        }
+        .task-status.rewriting {
+            background: #dbeafe;
+            color: #2563eb;
+        }
+        .task-status.rewritten {
+            background: #ede9fe;
+            color: #7c3aed;
+        }
+        .task-status.pending_publish {
+            background: #e0e7ff;
+            color: #4f46e5;
+        }
+        .task-status.published {
+            background: #d1fae5;
+            color: #059669;
+        }
+        .task-status.failed {
+            background: #fee2e2;
+            color: #dc2626;
+        }
+        .task-actions {
+            display: flex;
+            gap: 8px;
+        }
+        .task-actions button {
+            padding: 6px 12px;
+            border: 1px solid #ddd;
+            background: white;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 12px;
+            color: #666;
+        }
+        .task-actions button:hover {
+            background: #f5f5f5;
+        }
+        .task-actions button.danger {
+            color: #dc2626;
+            border-color: #fca5a5;
+        }
+        .task-actions button.danger:hover {
+            background: #fef2f2;
+        }
+        .empty-state {
+            padding: 60px 20px;
+            text-align: center;
+            color: #999;
+        }
+        .empty-state p {
+            margin-bottom: 16px;
+        }
+        .empty-state .hint {
+            font-size: 13px;
+            color: #bbb;
+        }
+        .loading {
+            padding: 40px;
+            text-align: center;
+            color: #999;
+        }
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background: rgba(0,0,0,0.5);
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+        .modal.show {
+            display: flex;
+        }
+        .modal-content {
+            background: white;
+            border-radius: 12px;
+            max-width: 700px;
+            width: 90%;
+            max-height: 80vh;
+            overflow: auto;
+        }
+        .modal-header {
+            padding: 16px 20px;
+            border-bottom: 1px solid #eee;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .modal-header h3 {
+            color: #333;
+            font-size: 16px;
+        }
+        .modal-close {
+            background: none;
+            border: none;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+        }
+        .modal-body {
+            padding: 20px;
+        }
+        .article-section {
+            margin-bottom: 20px;
+        }
+        .article-section h4 {
+            color: #667eea;
+            font-size: 14px;
+            margin-bottom: 12px;
+            padding-bottom: 8px;
+            border-bottom: 2px solid #667eea;
+        }
+        .article-section.original h4 {
+            color: #666;
+            border-color: #ddd;
+        }
+        .article-section .title {
+            color: #333;
+            font-size: 16px;
+            margin-bottom: 12px;
+        }
+        .article-section .content {
+            color: #555;
+            font-size: 14px;
+            line-height: 1.8;
+            white-space: pre-wrap;
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        .btn-secondary {
+            padding: 8px 16px;
+            background: #f5f5f5;
+            color: #666;
+            border: none;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 13px;
+        }
+        .btn-secondary:hover {
+            background: #eee;
+        }
+    </style>
+</head>
+<body>
+    <nav class="navbar">
+        <h1>AiMaster</h1>
+        <div class="user-info">
+            <span class="username" id="username">-</span>
+            <button class="logout-btn" onclick="logout()">退出登录</button>
+        </div>
+    </nav>
+
+    <div class="container">
+        <div class="header">
+            <h2>我的任务</h2>
+        </div>
+
+        <div class="stats">
+            <div class="stat-card pending">
+                <div class="label">待改写</div>
+                <div class="value" id="statPending">0</div>
+            </div>
+            <div class="stat-card rewritten">
+                <div class="label">已改写</div>
+                <div class="value" id="statRewritten">0</div>
+            </div>
+            <div class="stat-card published">
+                <div class="label">已完成</div>
+                <div class="value" id="statPublished">0</div>
+            </div>
+            <div class="stat-card failed">
+                <div class="label">失败</div>
+                <div class="value" id="statFailed">0</div>
+            </div>
+        </div>
+
+        <div class="task-list">
+            <div class="task-list-header">
+                <h3>任务列表</h3>
+                <button class="btn-secondary" onclick="loadTasks()">刷新</button>
+            </div>
+            <div id="taskContainer">
+                <div class="loading">加载中...</div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 任务详情弹窗 -->
+    <div class="modal" id="detailModal">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3>任务详情</h3>
+                <button class="modal-close" onclick="closeModal()">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- 动态内容 -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = '/api';
+
+        let currentUser = null;
+
+        // 检查登录状态
+        function checkAuth() {
+            const token = localStorage.getItem('access_token');
+            const userStr = localStorage.getItem('user');
+            if (!token || !userStr) {
+                window.location.href = '/login';
+                return null;
+            }
+            currentUser = JSON.parse(userStr);
+            document.getElementById('username').textContent = currentUser.username;
+            return token;
+        }
+
+        // 通用 API 请求
+        async function apiFetch(url, options = {}) {
+            const token = localStorage.getItem('access_token');
+            if (!token) {
+                window.location.href = '/login';
+                return;
+            }
+
+            options.headers = {
+                ...options.headers,
+                'Authorization': `Bearer ${token}`,
+                'Content-Type': 'application/json'
+            };
+
+            try {
+                const res = await fetch(url, options);
+
+                // Token 过期，尝试刷新
+                if (res.status === 401) {
+                    const refreshed = await refreshToken();
+                    if (refreshed) {
+                        // 重试请求
+                        options.headers['Authorization'] = `Bearer ${localStorage.getItem('access_token')}`;
+                        return fetch(url, options).then(r => r.json());
+                    } else {
+                        logout();
+                    }
+                }
+
+                return res.json();
+            } catch (e) {
+                console.error('API 请求失败', e);
+                throw e;
+            }
+        }
+
+        // 刷新 Token
+        async function refreshToken() {
+            const refresh = localStorage.getItem('refresh_token');
+            if (!refresh) return false;
+
+            try {
+                const res = await fetch(`${API_BASE}/auth/refresh`, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ refresh_token: refresh })
+                });
+
+                if (res.ok) {
+                    const data = await res.json();
+                    localStorage.setItem('access_token', data.access_token);
+                    return true;
+                }
+            } catch (e) {
+                console.error('刷新 Token 失败', e);
+            }
+            return false;
+        }
+
+        // 加载任务列表
+        async function loadTasks() {
+            const container = document.getElementById('taskContainer');
+            container.innerHTML = '<div class="loading">加载中...</div>';
+
+            try {
+                const tasks = await apiFetch(`${API_BASE}/tasks?size=50`);
+                renderTasks(tasks);
+                updateStats(tasks);
+            } catch (e) {
+                container.innerHTML = '<div class="empty-state"><p>加载失败</p></div>';
+            }
+        }
+
+        // 渲染任务列表
+        function renderTasks(tasks) {
+            const container = document.getElementById('taskContainer');
+
+            if (!tasks || tasks.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <p>暂无任务</p>
+                        <p class="hint">打开 Chrome 插件，浏览支持的新闻网站，点击"爬取文章"开始</p>
+                    </div>
+                `;
+                return;
+            }
+
+            const statusMap = {
+                'pending_rewrite': 'pending',
+                'rewriting': 'rewriting',
+                'rewritten': 'rewritten',
+                'pending_publish': 'pending_publish',
+                'published': 'published',
+                'failed': 'failed'
+            };
+
+            const statusText = {
+                'pending_rewrite': '待改写',
+                'rewriting': '改写中',
+                'rewritten': '已改写',
+                'pending_publish': '待发布',
+                'published': '已发布',
+                'failed': '失败'
+            };
+
+            container.innerHTML = tasks.map(task => `
+                <div class="task-item">
+                    <div class="task-info">
+                        <div class="task-title" title="${task.original_title || ''}">${task.original_title || '无标题'}</div>
+                        <div class="task-meta">
+                            ${task.original_platform || ''} · ${task.created_at ? formatTime(task.created_at) : ''}
+                        </div>
+                    </div>
+                    <span class="task-status ${statusMap[task.status] || ''}">${statusText[task.status] || task.status}</span>
+                    <div class="task-actions">
+                        <button onclick="viewTask('${task.id}')">查看</button>
+                        <button class="danger" onclick="deleteTask('${task.id}')">删除</button>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        // 更新统计
+        function updateStats(tasks) {
+            const counts = { pending_rewrite: 0, rewriting: 0, rewritten: 0, pending_publish: 0, published: 0, failed: 0 };
+            tasks.forEach(t => {
+                if (counts[t.status] !== undefined) counts[t.status]++;
+            });
+
+            document.getElementById('statPending').textContent = counts.pending_rewrite + counts.rewriting;
+            document.getElementById('statRewritten').textContent = counts.rewritten + counts.pending_publish;
+            document.getElementById('statPublished').textContent = counts.published;
+            document.getElementById('statFailed').textContent = counts.failed;
+        }
+
+        // 格式化时间
+        function formatTime(isoString) {
+            if (!isoString) return '';
+            const d = new Date(isoString);
+            const month = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            const hours = String(d.getHours()).padStart(2, '0');
+            const mins = String(d.getMinutes()).padStart(2, '0');
+            return `${month}-${day} ${hours}:${mins}`;
+        }
+
+        // 查看任务详情
+        async function viewTask(taskId) {
+            const modal = document.getElementById('detailModal');
+            const body = document.getElementById('modalBody');
+            body.innerHTML = '<div class="loading">加载中...</div>';
+            modal.classList.add('show');
+
+            try {
+                const task = await apiFetch(`${API_BASE}/tasks/${taskId}`);
+                body.innerHTML = `
+                    <div class="article-section original">
+                        <h4>原文</h4>
+                        <div class="title">${task.original_title || '无标题'}</div>
+                        <div class="content">${task.original_content || '无内容'}</div>
+                    </div>
+                    <div class="article-section rewritten">
+                        <h4>改写后</h4>
+                        <div class="title">${task.rewritten_title || '（改写中或失败）'}</div>
+                        <div class="content">${task.rewritten_content || '暂无'}</div>
+                    </div>
+                `;
+            } catch (e) {
+                body.innerHTML = '<div class="empty-state"><p>加载失败</p></div>';
+            }
+        }
+
+        // 关闭弹窗
+        function closeModal() {
+            document.getElementById('detailModal').classList.remove('show');
+        }
+
+        // 点击弹窗背景关闭
+        document.getElementById('detailModal').addEventListener('click', (e) => {
+            if (e.target.id === 'detailModal') closeModal();
+        });
+
+        // 删除任务
+        async function deleteTask(taskId) {
+            if (!confirm('确定要删除这个任务吗？')) return;
+
+            try {
+                await apiFetch(`${API_BASE}/tasks/${taskId}`, { method: 'DELETE' });
+                loadTasks();
+            } catch (e) {
+                alert('删除失败');
+            }
+        }
+
+        // 退出登录
+        function logout() {
+            localStorage.removeItem('access_token');
+            localStorage.removeItem('refresh_token');
+            localStorage.removeItem('user');
+            window.location.href = '/login';
+        }
+
+        // 初始化
+        if (checkAuth()) {
+            loadTasks();
+        }
+    </script>
+</body>
+</html>

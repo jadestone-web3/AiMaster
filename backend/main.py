@@ -8,15 +8,18 @@ import os
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 from contextlib import asynccontextmanager
-from fastapi import FastAPI, Request
-from fastapi.responses import JSONResponse
+from fastapi import FastAPI, Request, Depends
+from fastapi.responses import HTMLResponse, JSONResponse, RedirectResponse
 from fastapi.middleware.cors import CORSMiddleware
+from fastapi.staticfiles import StaticFiles
+from sqlalchemy.orm import Session
 
-from database import init_db, SessionLocal
+from database import get_db, init_db, SessionLocal
 from models import User, TaskStatus
 from config import settings
 from routers import auth_router, tasks_router
 from routers.articles import router as articles_router
+from routers.auth import verify_access_token
 from ai_service import ai_service
 
 
@@ -97,23 +100,35 @@ async def global_exception_handler(request: Request, exc: Exception):
     )
 
 
-# 注册路由
+# 注册 API 路由
 app.include_router(auth_router)
 app.include_router(tasks_router)
 app.include_router(articles_router)
 
 
-# 健康检查
-@app.get("/")
-async def root():
-    """健康检查"""
-    return {
-        "status": "ok",
-        "service": settings.APP_NAME,
-        "version": settings.APP_VERSION
-    }
+# ==================== 页面路由 ====================
+@app.get("/", response_class=HTMLResponse)
+async def home():
+    """首页 - 需要登录"""
+    with open(os.path.join(os.path.dirname(__file__), "templates", "index.html"), "r", encoding="utf-8") as f:
+        return f.read()
 
 
+@app.get("/login", response_class=HTMLResponse)
+async def login_page():
+    """登录页"""
+    with open(os.path.join(os.path.dirname(__file__), "templates", "login.html"), "r", encoding="utf-8") as f:
+        return f.read()
+
+
+@app.get("/register", response_class=HTMLResponse)
+async def register_page():
+    """注册页"""
+    with open(os.path.join(os.path.dirname(__file__), "templates", "register.html"), "r", encoding="utf-8") as f:
+        return f.read()
+
+
+# ==================== 健康检查 ====================
 @app.get("/health")
 async def health():
     """健康检查"""
